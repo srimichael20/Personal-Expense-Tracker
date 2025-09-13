@@ -1,0 +1,92 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Personal Expense Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <link rel="stylesheet" href="{% static 'expenses/style.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="container animate__animated animate__fadeIn">
+    <h1 class="animate__animated animate__bounceInDown"><i class="fas fa-wallet"></i> Personal Expense Tracker</h1>
+
+    <div class="form-container animate__animated animate__fadeInUp">
+        <h2>Add New Expense</h2>
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit"><i class="fas fa-plus-circle"></i> Add Expense</button>
+        </form>
+    </div>
+
+    <div class="summary animate__animated animate__fadeIn">
+        <h2>Total Spent: <span class="highlight">${{ total_spent }}</span></h2>
+        <h3>Spending by Category</h3>
+        <canvas id="categoryChart"></canvas>
+        <h3>Spending Over Time</h3>
+        <canvas id="timeChart"></canvas>
+    </div>
+
+    <div class="table-container animate__animated animate__fadeIn">
+        <h3>All Expenses</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date <i class="fas fa-calendar-alt animate__animated animate__bounce"></i></th>
+                    <th>Category <i class="fas fa-tags animate__animated animate__pulse animate__infinite"></i></th>
+                    <th>Amount <i class="fas fa-dollar-sign animate__animated animate__flash animate__infinite"></i></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exp in expenses %}
+                <tr>
+                    <td>{{ exp.date }}</td>
+                    <td>{{ exp.category }}</td>
+                    <td>${{ exp.amount }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const categoryData = {{ category_summary|safe }};
+    const timeData = {{ time_summary|safe }};
+
+    const catLabels = categoryData.map(item => item.category);
+    const catAmounts = categoryData.map(item => item.total);
+
+    new Chart(document.getElementById('categoryChart'), {
+        type: 'doughnut',
+        data: {
+            labels: catLabels,
+            datasets: [{ data: catAmounts, backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40'] }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+
+    const timeLabels = timeData.map(item => item.date);
+    const timeAmounts = timeData.map(item => item.total);
+
+    new Chart(document.getElementById('timeChart'), {
+        type: 'line',
+        data: {
+            labels: timeLabels,
+            datasets: [{
+                label: 'Spending Over Time',
+                data: timeAmounts,
+                borderColor: '#FF6384',
+                fill: true,
+                backgroundColor: 'rgba(255,99,132,0.2)',
+                tension: 0.4
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
+    });
+</script>
+</body>
+</html>
